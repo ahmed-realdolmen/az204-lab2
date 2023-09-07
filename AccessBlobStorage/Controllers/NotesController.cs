@@ -24,12 +24,21 @@ namespace AccessBlobStorage.Controllers
             var blobClient = containerClient.GetBlobClient(blobName);
 
             var oldContent = await ReadWholeContent(blobClient);
-            var newContent = oldContent + '\n' + line;
+            var newContent = line;
+            if (oldContent != null)
+            {
+                newContent = string.Join('\n', new string[] { oldContent, line });
+            }
             await WriteWholeContent(blobClient, newContent);
         }
 
-        private async Task<string> ReadWholeContent(BlobClient blobClient)
+        private async Task<string?> ReadWholeContent(BlobClient blobClient)
         {
+            if (!await blobClient.ExistsAsync())
+            {
+                return null;
+            }
+
             using var read = await blobClient.OpenReadAsync();
             using var streamReader = new StreamReader(read);
             return await streamReader.ReadToEndAsync();
