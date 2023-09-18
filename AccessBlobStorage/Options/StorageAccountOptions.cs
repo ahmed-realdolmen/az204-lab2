@@ -2,6 +2,6 @@
 {
     public class StorageAccountOptions
     {
-        public string ConnectionString { get; set; }
+        public string Uri { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 using AccessBlobStorage.Options;
+using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
 
@@ -14,7 +15,7 @@ builder.Services.AddSwaggerGen();
 var config = builder.Configuration.GetSection("StorageAccount").Get<StorageAccountOptions>();
 builder.Services.AddScoped(_ =>
 {
-    return new BlobServiceClient(config.ConnectionString);
+    return new BlobServiceClient(new Uri(config.Uri), new DefaultAzureCredential());
 });
 
 var app = builder.Build();
