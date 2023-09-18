@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Http;
@@ -81,13 +82,29 @@ namespace AccessBlobStorage.Controllers
 
             sasBuilder.SetPermissions(BlobContainerSasPermissions.Read);
 
-            // blobClient.CanGenerateSasUri
-
-            var uri = blobClient.GenerateSasUri(sasBuilder);
-            return new CreateSasTokenResponse
+            if (blobClient.CanGenerateSasUri)
             {
-                Token = uri.ToString(),
-            };
+                var uri = blobClient.GenerateSasUri(sasBuilder);
+                return new CreateSasTokenResponse
+                {
+                    Token = uri.ToString(),
+                };
+            } else
+            {
+                var userDelegationKey = await _blobServiceClient
+                    .GetUserDelegationKeyAsync(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(7));
+
+                var blobUriBuilder = new BlobUriBuilder(blobClient.Uri)
+                {
+                    Sas = sasBuilder.ToSasQueryParameters(userDelegationKey, _blobServiceClient.AccountName)
+                };
+                return new CreateSasTokenResponse
+                {
+                    Token = blobUriBuilder.ToUri().ToString(),
+                };
+            }
+
+            
         }
     }
 }
