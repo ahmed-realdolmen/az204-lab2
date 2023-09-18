@@ -1,4 +1,6 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Sas;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,6 +51,43 @@ namespace AccessBlobStorage.Controllers
             using var writer = await blobClient.OpenWriteAsync(true);
             using var streamWriter = new StreamWriter(writer);
             await streamWriter.WriteAsync(content);
+        }
+
+        public class CreateSasTokenResponse
+        {
+            public string Token { get; set; }
+        }
+
+        [HttpPost("CreateSas/{blobName}")]
+        public async Task<ActionResult<CreateSasTokenResponse>> CreateSas(string blobName)
+        {
+            var containerClient = _blobServiceClient.GetBlobContainerClient("notes");
+            await containerClient.CreateIfNotExistsAsync();
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            if (!await blobClient.ExistsAsync())
+            {
+                return NotFound();
+            }
+
+            BlobSasBuilder sasBuilder = new()
+            {
+                BlobContainerName = containerClient.Name,
+                BlobName = blobClient.Name,
+                Resource = "b",
+                ExpiresOn = DateTimeOffset.UtcNow.AddSeconds(20)
+            };
+
+            sasBuilder.SetPermissions(BlobContainerSasPermissions.Read);
+
+            // blobClient.CanGenerateSasUri
+
+            var uri = blobClient.GenerateSasUri(sasBuilder);
+            return new CreateSasTokenResponse
+            {
+                Token = uri.ToString(),
+            };
         }
     }
 }
