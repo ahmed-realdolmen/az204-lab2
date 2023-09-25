@@ -15,7 +15,7 @@ builder.Services.AddSwaggerGen();
 var config = builder.Configuration.GetSection("StorageAccount").Get<StorageAccountOptions>();
 builder.Services.AddScoped(_ =>
 {
-    return new BlobServiceClient(new Uri(config.Uri), new DefaultAzureCredential());
+    return new BlobServiceClient(new Uri(config.Uri), new ClientSecretCredential(config.TenantId, config.CientId, config.Secret));
 });
 
 var app = builder.Build();
